@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/blogc/go-blogc"
 )
@@ -62,6 +63,25 @@ func newCtx() (*context, error) {
 		posts:    posts,
 		template: template,
 	}
+
+	sort.Slice(rv.posts, func(i int, j int) bool {
+		rv := func(i int, j int) bool {
+			if rv.posts[i].timestamp != rv.posts[j].timestamp {
+				return rv.posts[i].timestamp > rv.posts[j].timestamp
+			}
+			return posts[i].slug > posts[j].slug
+		}(i, j)
+
+		if index != nil {
+			// FIXME: check value?
+			_, asc, err := index.getVariable("POSTS_ASC")
+			if err == nil && asc {
+				return !rv
+			}
+		}
+
+		return rv
+	})
 
 	return &rv, nil
 }
