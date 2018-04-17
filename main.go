@@ -22,7 +22,7 @@ func main() {
 
 	level, found := os.LookupEnv("LOG_LEVEL")
 	if !found {
-		level = logrus.WarnLevel.String()
+		level = logrus.InfoLevel.String()
 	}
 
 	lvl, err := logrus.ParseLevel(level)
