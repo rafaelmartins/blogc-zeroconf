@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 
@@ -94,6 +95,53 @@ func main() {
 
 	} else if ctx.index != nil {
 		appendEntryCtx(ctx.index.path, dst)
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "clean" {
+		for _, c := range posts {
+			c.logCtx.Info("removing")
+			if err := os.Remove(c.blogcCtx.OutputFile.Path()); err != nil {
+				c.logCtx.Fatal(err)
+			}
+		}
+
+		dirs := []string{}
+		filepath.Walk(out, func(path string, info os.FileInfo, err error) error {
+			if !info.IsDir() {
+				return nil
+			}
+
+			if err != nil {
+				logrus.WithField("dir", path).Error(err)
+				return nil
+			}
+
+			// prepend to slice, because we want subdirectories first
+			dirs = append([]string{path}, dirs...)
+			return nil
+		})
+
+		for _, dir := range dirs {
+			logCtx := logrus.WithField("dir", dir)
+
+			f, err := os.Open(dir)
+			if err != nil {
+				logCtx.Fatal(err)
+			}
+			defer f.Close()
+
+			if _, err = f.Readdirnames(1); err != io.EOF {
+				logCtx.Warning("directory not empty")
+				continue
+			}
+
+			logCtx.Info("removing")
+			if err := os.Remove(dir); err != nil {
+				logCtx.Fatal(err)
+			}
+		}
+
+		return
 	}
 
 	for _, c := range posts {
