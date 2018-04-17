@@ -66,10 +66,10 @@ func newCtx() (*context, error) {
 	return &rv, nil
 }
 
-func (c *context) globalVariables(withSiteTitle bool) []string {
+func (c *context) globalVariables() []string {
 	rv := []string{}
 
-	if withSiteTitle && c.title != "" {
+	if c.title != "" {
 		rv = append(rv, fmt.Sprintf("SITE_TITLE=%s", c.title))
 	}
 

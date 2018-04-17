@@ -32,9 +32,9 @@ func main() {
 
 	posts := []*buildCtx{}
 	postsFiles := []blogc.File{}
-	vars := ctx.globalVariables(true)
+	vars := ctx.globalVariables()
 
-	appendEntryCtx := func(src blogc.File, dst blogc.File, vars []string) {
+	appendEntryCtx := func(src blogc.File, dst blogc.File) {
 		posts = append(posts, &buildCtx{
 			blogcCtx: &blogc.BuildContext{
 				Listing:         false,
@@ -54,7 +54,6 @@ func main() {
 		appendEntryCtx(
 			p.path,
 			blogc.FilePath(filepath.Join(out, "post", p.slug, "index.html")),
-			vars,
 		)
 		postsFiles = append(postsFiles, p.path)
 	}
@@ -83,7 +82,7 @@ func main() {
 		})
 
 	} else if ctx.index != nil {
-		appendEntryCtx(ctx.index.path, dst, ctx.globalVariables(false))
+		appendEntryCtx(ctx.index.path, dst)
 	}
 
 	for _, c := range posts {

@@ -7,7 +7,7 @@ const (
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block entry %}{% ifdef TITLE %}{{ TITLE }}{% ifdef SITE_TITLE %} | {% endif %}{% endif %}{% endblock %}{{ SITE_TITLE }}</title>
+    <title>{{ SITE_TITLE }}{% block entry %}{% if TITLE != SITE_TITLE %} | {{ TITLE }}{% endif %}{% endblock %}</title>
     <meta name="generator" content="blogc {{ BLOGC_VERSION }}" />
     <meta property="og:site_name" content="{{ SITE_TITLE }}" />
     {%- block entry %}
@@ -41,7 +41,9 @@ const (
       <h1><a href="{{ BASE_URL }}/">{{ SITE_TITLE }}</a></h1>
       {%- endif %}
       {%- block entry %}
+      {%- if TITLE != SITE_TITLE %}
       <h1>{{ TITLE }}</h1>
+      {%- endif %}
       {{ CONTENT }}
       {%- endblock %}
       {%- block listing_entry %}
