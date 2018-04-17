@@ -40,13 +40,13 @@ func (s *source) setTimestamp() {
 
 	v, found, err := ctx.GetEvaluatedVariable("DATE_FORMATTED")
 	if err != nil || !found {
-		s.logCtx.Warning("failed to get timestamp")
+		s.logCtx.Warning("failed to get post timestamp")
 		return
 	}
 
 	t, err := strconv.ParseInt(v, 10, 64)
 	if err != nil {
-		s.logCtx.Warning("failed to parse timestamp")
+		s.logCtx.Warning("failed to parse post timestamp")
 		return
 	}
 

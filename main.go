@@ -19,6 +19,17 @@ func main() {
 		out = "_build"
 	}
 
+	level, found := os.LookupEnv("LOG_LEVEL")
+	if !found {
+		level = logrus.WarnLevel.String()
+	}
+
+	lvl, err := logrus.ParseLevel(level)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	logrus.SetLevel(lvl)
+
 	ctx, err := newCtx()
 	if err != nil {
 		logrus.Fatal(err)
