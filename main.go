@@ -34,23 +34,28 @@ func main() {
 	postsFiles := []blogc.File{}
 	vars := ctx.globalVariables(true)
 
-	for _, p := range ctx.posts {
-		dst := blogc.FilePath(filepath.Join(out, "post", p.slug, "index.html"))
-
-		entry := &blogc.BuildContext{
-			Listing:         false,
-			InputFiles:      []blogc.File{p.path},
-			TemplateFile:    tmpl,
-			OutputFile:      dst,
-			GlobalVariables: vars,
-		}
-
-		logCtx := logrus.WithFields(logrus.Fields{
-			"file": p.path.Path(),
-			"post": dst.Path(),
+	appendEntryCtx := func(src blogc.File, dst blogc.File, vars []string) {
+		posts = append(posts, &buildCtx{
+			blogcCtx: &blogc.BuildContext{
+				Listing:         false,
+				InputFiles:      []blogc.File{src},
+				TemplateFile:    tmpl,
+				OutputFile:      dst,
+				GlobalVariables: vars,
+			},
+			logCtx: logrus.WithFields(logrus.Fields{
+				"file":  src.Path(),
+				"entry": dst.Path(),
+			}),
 		})
+	}
 
-		posts = append(posts, &buildCtx{blogcCtx: entry, logCtx: logCtx})
+	for _, p := range ctx.posts {
+		appendEntryCtx(
+			p.path,
+			blogc.FilePath(filepath.Join(out, "post", p.slug, "index.html")),
+			vars,
+		)
 		postsFiles = append(postsFiles, p.path)
 	}
 
@@ -78,21 +83,7 @@ func main() {
 		})
 
 	} else if ctx.index != nil {
-		entry := &blogc.BuildContext{
-			Listing:         false,
-			InputFiles:      []blogc.File{ctx.index.path},
-			TemplateFile:    tmpl,
-			OutputFile:      dst,
-			GlobalVariables: ctx.globalVariables(false),
-		}
-
-		posts = append(posts, &buildCtx{
-			blogcCtx: entry,
-			logCtx: logrus.WithFields(logrus.Fields{
-				"file": ctx.index.path.Path(),
-				"post": dst.Path(),
-			}),
-		})
+		appendEntryCtx(ctx.index.path, dst, ctx.globalVariables(false))
 	}
 
 	for _, c := range posts {
