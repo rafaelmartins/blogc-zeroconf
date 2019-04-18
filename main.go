@@ -62,7 +62,7 @@ func main() {
 	for _, p := range ctx.posts {
 		appendEntryCtx(
 			p,
-			blogc.FilePath(filepath.Join(out, "post", p.slug, "index.html")),
+			blogc.FilePath(filepath.Join(out, ctx.postsPrefix, p.slug, "index.html")),
 		)
 		postsFiles = append(postsFiles, p.path)
 	}

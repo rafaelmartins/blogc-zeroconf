@@ -11,8 +11,9 @@ import (
 type context struct {
 
 	// guessed from index
-	title    string
-	subtitle string
+	title       string
+	subtitle    string
+	postsPrefix string
 
 	// read from directory
 	index    *source
@@ -37,6 +38,7 @@ func newCtx() (*context, error) {
 
 	title := "Untitled"
 	subtitle := ""
+	postsPrefix := "post"
 
 	if index == nil {
 		if len(posts) == 0 {
@@ -45,23 +47,38 @@ func newCtx() (*context, error) {
 	} else {
 		var err error
 
-		title, _, err = index.getVariable("TITLE")
+		ttitle, found, err := index.getVariable("TITLE")
 		if err != nil {
 			return nil, err
 		}
+		if found {
+			title = ttitle
+		}
 
-		subtitle, _, err = index.getVariable("SUBTITLE")
+		tsubtitle, found, err := index.getVariable("SUBTITLE")
 		if err != nil {
 			return nil, err
+		}
+		if found {
+			subtitle = tsubtitle
+		}
+
+		ppostsPrefix, found, err := index.getVariable("POSTS_PREFIX")
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			postsPrefix = ppostsPrefix
 		}
 	}
 
 	rv := context{
-		title:    title,
-		subtitle: subtitle,
-		index:    index,
-		posts:    posts,
-		template: template,
+		title:       title,
+		subtitle:    subtitle,
+		postsPrefix: postsPrefix,
+		index:       index,
+		posts:       posts,
+		template:    template,
 	}
 
 	sort.Slice(rv.posts, func(i int, j int) bool {
@@ -95,6 +112,10 @@ func (c *context) globalVariables() []string {
 
 	if c.subtitle != "" {
 		rv = append(rv, fmt.Sprintf("SITE_SUBTITLE=%s", c.subtitle))
+	}
+
+	if c.postsPrefix != "" {
+		rv = append(rv, fmt.Sprintf("POSTS_PREFIX=%s", c.postsPrefix))
 	}
 
 	return rv
