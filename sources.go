@@ -54,7 +54,7 @@ func (s *source) setTimestamp() {
 }
 
 func getSources(dir string) (*source, []*source, string) {
-	logrus.WithField("directory", dir).Info("discovering sources")
+	logrus.WithField("path", dir).Info("discovering sources")
 
 	posts := []*source{}
 	template := ""
@@ -63,7 +63,7 @@ func getSources(dir string) (*source, []*source, string) {
 	var index *source = nil
 
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		logCtx := logrus.WithField("file", path)
+		logCtx := logrus.WithField("path", path)
 
 		if err != nil {
 			logCtx.Error(err)
@@ -88,28 +88,28 @@ func getSources(dir string) (*source, []*source, string) {
 		}
 
 		if matches := reIndex.FindStringSubmatch(basePath); index == nil && matches != nil && len(matches) == 2 {
-			logCtx.Info("found index")
 			index = &source{
 				path: blogc.FilePath(path),
 				slug: matches[1],
 				logCtx: logrus.WithFields(logrus.Fields{
-					"path": path,
-					"slug": matches[1],
+					"source": path,
+					"slug":   matches[1],
 				}),
 			}
+			index.logCtx.Info("found index")
 			return nil
 		}
 
 		if matches := rePosts.FindStringSubmatch(basePath); matches != nil && len(matches) == 2 {
-			logCtx.Info("found post")
 			entry := &source{
 				path: blogc.FilePath(path),
 				slug: matches[1],
 				logCtx: logrus.WithFields(logrus.Fields{
-					"path": path,
-					"slug": matches[1],
+					"source": path,
+					"slug":   matches[1],
 				}),
 			}
+			entry.logCtx.Info("found post")
 			entry.setTimestamp()
 			posts = append(posts, entry)
 			return nil

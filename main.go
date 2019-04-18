@@ -46,25 +46,22 @@ func main() {
 	postsFiles := []blogc.File{}
 	vars := ctx.globalVariables()
 
-	appendEntryCtx := func(src blogc.File, dst blogc.File) {
+	appendEntryCtx := func(src *source, dst blogc.File) {
 		posts = append(posts, &buildCtx{
 			blogcCtx: &blogc.BuildContext{
 				Listing:         false,
-				InputFiles:      []blogc.File{src},
+				InputFiles:      []blogc.File{src.path},
 				TemplateFile:    tmpl,
 				OutputFile:      dst,
 				GlobalVariables: vars,
 			},
-			logCtx: logrus.WithFields(logrus.Fields{
-				"file":  src.Path(),
-				"entry": dst.Path(),
-			}),
+			logCtx: src.logCtx.WithField("entry", dst.Path()),
 		})
 	}
 
 	for _, p := range ctx.posts {
 		appendEntryCtx(
-			p.path,
+			p,
 			blogc.FilePath(filepath.Join(out, "post", p.slug, "index.html")),
 		)
 		postsFiles = append(postsFiles, p.path)
@@ -85,7 +82,7 @@ func main() {
 
 		if ctx.index != nil {
 			listing.ListingEntryFile = ctx.index.path
-			logCtx = logCtx.WithField("file", ctx.index.path.Path())
+			logCtx = logCtx.WithField("source", ctx.index.path.Path())
 		}
 
 		posts = append(posts, &buildCtx{
@@ -94,7 +91,7 @@ func main() {
 		})
 
 	} else if ctx.index != nil {
-		appendEntryCtx(ctx.index.path, dst)
+		appendEntryCtx(ctx.index, dst)
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "clean" {
@@ -112,7 +109,7 @@ func main() {
 			}
 
 			if err != nil {
-				logrus.WithField("dir", path).Error(err)
+				logrus.WithField("path", path).Error(err)
 				return nil
 			}
 
@@ -122,7 +119,7 @@ func main() {
 		})
 
 		for _, dir := range dirs {
-			logCtx := logrus.WithField("dir", dir)
+			logCtx := logrus.WithField("path", dir)
 
 			f, err := os.Open(dir)
 			if err != nil {
