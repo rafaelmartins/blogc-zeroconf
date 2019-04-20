@@ -21,9 +21,11 @@ type context struct {
 	withDate    bool
 
 	// read from directory
-	index    *source
-	posts    []*source
-	template string
+	index          *source
+	posts          []*source
+	postsFiles     []blogc.File
+	postsAtomFiles []blogc.File
+	template       string
 }
 
 func newCtx() (*context, error) {
@@ -118,12 +120,15 @@ func newCtx() (*context, error) {
 	for _, v := range ctx.posts {
 		if v.timestamp == -1 {
 			ctx.withDate = false
-			break
 		}
+
+		ctx.postsFiles = append(ctx.postsFiles, &v.path)
+		ctx.postsAtomFiles = append(ctx.postsAtomFiles, &v.path)
 	}
 
-	sort.Slice(ctx.posts, func(i int, j int) bool {
+	sort.Slice(ctx.postsFiles, func(i int, j int) bool {
 		rv := func(i int, j int) bool {
+			// we assume that posts and postsFiles have the same size and order
 			if ctx.posts[i].timestamp != ctx.posts[j].timestamp {
 				return ctx.posts[i].timestamp > ctx.posts[j].timestamp
 			}

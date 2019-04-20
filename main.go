@@ -43,12 +43,11 @@ func main() {
 	}
 	defer tmpl.Close()
 
-	posts := []*buildCtx{}
-	postsFiles := []blogc.File{}
+	bctxs := []*buildCtx{}
 	vars := ctx.globalVariables()
 
 	appendEntryCtx := func(src *source, dst blogc.File) {
-		posts = append(posts, &buildCtx{
+		bctxs = append(bctxs, &buildCtx{
 			blogcCtx: &blogc.BuildContext{
 				Listing:         false,
 				InputFiles:      []blogc.File{src.path},
@@ -65,15 +64,14 @@ func main() {
 			p,
 			blogc.FilePath(filepath.Join(out, ctx.postsPrefix, p.slug, "index.html")),
 		)
-		postsFiles = append(postsFiles, p.path)
 	}
 
 	dst := blogc.FilePath(filepath.Join(out, "index.html"))
 
-	if len(posts) > 0 {
+	if len(ctx.posts) > 0 {
 		listing := &blogc.BuildContext{
 			Listing:         true,
-			InputFiles:      postsFiles,
+			InputFiles:      ctx.postsFiles,
 			TemplateFile:    tmpl,
 			OutputFile:      dst,
 			GlobalVariables: vars,
@@ -86,7 +84,7 @@ func main() {
 			logCtx = logCtx.WithField("source", ctx.index.path.Path())
 		}
 
-		posts = append(posts, &buildCtx{
+		bctxs = append(bctxs, &buildCtx{
 			blogcCtx: listing,
 			logCtx:   logCtx,
 		})
@@ -101,10 +99,10 @@ func main() {
 			}
 			defer atomTmpl.Close()
 
-			posts = append(posts, &buildCtx{
+			bctxs = append(bctxs, &buildCtx{
 				blogcCtx: &blogc.BuildContext{
 					Listing:         true,
-					InputFiles:      postsFiles,
+					InputFiles:      ctx.postsAtomFiles,
 					TemplateFile:    atomTmpl,
 					OutputFile:      atomDst,
 					GlobalVariables: append(vars, "DATE_FORMAT=%Y-%m-%dT%H:%M:%SZ"),
@@ -128,7 +126,7 @@ func main() {
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "clean" {
-		for _, c := range posts {
+		for _, c := range bctxs {
 			c.logCtx.Info("removing")
 			if err := os.Remove(c.blogcCtx.OutputFile.Path()); err != nil {
 				c.logCtx.Fatal(err)
@@ -174,7 +172,7 @@ func main() {
 		return
 	}
 
-	for _, c := range posts {
+	for _, c := range bctxs {
 		c.logCtx.Info("building")
 		if err := c.blogcCtx.Build(); err != nil {
 			c.logCtx.Fatal(err)
