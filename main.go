@@ -90,6 +90,30 @@ func main() {
 			logCtx:   logCtx,
 		})
 
+		atomDst := blogc.FilePath(filepath.Join(out, "atom.xml"))
+		atomLogCtx := logrus.WithField("atom", atomDst.Path())
+
+		if ctx.baseDomain != "" && ctx.authorName != "" && ctx.authorEmail != "" {
+			atomTmpl, err := ctx.getAtomTemplate()
+			if err != nil {
+				atomLogCtx.Fatal(err)
+			}
+			defer atomTmpl.Close()
+
+			posts = append(posts, &buildCtx{
+				blogcCtx: &blogc.BuildContext{
+					Listing:         true,
+					InputFiles:      postsFiles,
+					TemplateFile:    atomTmpl,
+					OutputFile:      atomDst,
+					GlobalVariables: append(vars, "DATE_FORMAT=%Y-%m-%dT%H:%M:%SZ"),
+				},
+				logCtx: atomLogCtx,
+			})
+		} else {
+			atomLogCtx.Warning("atom feed disabled. to generate, add BASE_DOMAIN, AUTHOR_NAME and AUTHOR_EMAIL to index file")
+		}
+
 	} else if ctx.index != nil {
 		appendEntryCtx(ctx.index, dst)
 	}

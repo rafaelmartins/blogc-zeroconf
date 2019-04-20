@@ -63,4 +63,34 @@ const (
     </div>
   </body>
 </html>`
+
+	atomTemplate = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="text">{{ SITE_TITLE }}</title>
+  <id>{{ BASE_DOMAIN }}{{ BASE_URL }}/atom{% ifdef FILTER_TAG %}/{{ FILTER_TAG }}{% endif %}/index.xml</id>
+  <updated>{{ DATE_FIRST_FORMATTED }}</updated>
+  <link href="{{ BASE_DOMAIN }}{{ BASE_URL }}/" />
+  <link href="{{ BASE_DOMAIN }}{{ BASE_URL }}/atom{% ifdef FILTER_TAG %}/{{ FILTER_TAG }}{% endif %}/index.xml" rel="self" />
+  <author>
+    <name>{{ AUTHOR_NAME }}</name>
+    <email>{{ AUTHOR_EMAIL }}</email>
+  </author>
+  {%- ifdef SITE_SUBTITLE %}
+  <subtitle type="text">{{ SITE_SUBTITLE }}</subtitle>
+  {%- endif %}
+  {%- block listing %}
+  <entry>
+    <title type="text">{{ TITLE }}</title>
+    <id>{{ BASE_DOMAIN }}{{ BASE_URL }}/{{ POSTS_PREFIX }}{% ifndef POSTS_PREFIX %}post{% endif %}/{{ FILENAME }}/index.html</id>
+    <updated>{{ DATE_FORMATTED }}</updated>
+    <published>{{ DATE_FORMATTED }}</published>
+    <link href="{{ BASE_DOMAIN }}{{ BASE_URL }}/{{ POSTS_PREFIX }}{% ifndef POSTS_PREFIX %}post{% endif %}/{{ FILENAME }}/index.html" />
+    <author>
+      <name>{{ AUTHOR_NAME }}</name>
+      <email>{{ AUTHOR_EMAIL }}</email>
+    </author>
+    <content type="html"><![CDATA[{{ CONTENT }}]]></content>
+  </entry>
+  {%- endblock %}
+</feed>`
 )
