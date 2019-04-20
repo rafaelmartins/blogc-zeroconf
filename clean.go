@@ -15,20 +15,29 @@ func clean(ctx *context, out string) error {
 	}
 
 	for _, c := range bctxs {
-		c.logCtx.Info("removing")
 		if err := os.Remove(c.blogcCtx.OutputFile.Path()); err != nil {
+			if os.IsNotExist(err) {
+				c.logCtx.Warning("not found, skipping")
+				continue
+			}
 			return err
 		}
+		c.logCtx.Info("removed")
 	}
 
 	dirs := []string{}
 	filepath.Walk(out, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
+		if err != nil {
+			logCtx := logrus.WithField("path", path)
+			if os.IsNotExist(err) {
+				logCtx.Warning("not found, skipping")
+				return nil
+			}
+			logCtx.Error(err)
 			return nil
 		}
 
-		if err != nil {
-			logrus.WithField("path", path).Error(err)
+		if !info.IsDir() {
 			return nil
 		}
 
@@ -51,10 +60,14 @@ func clean(ctx *context, out string) error {
 			continue
 		}
 
-		logCtx.Info("removing")
 		if err := os.Remove(dir); err != nil {
+			if os.IsNotExist(err) {
+				logCtx.Warning("not found, skipping")
+				continue
+			}
 			return err
 		}
+		logCtx.Info("removed")
 	}
 
 	return nil
