@@ -95,6 +95,7 @@ func getSources(dir string) (*source, []*source, string) {
 					"source": path,
 					"slug":   matches[1],
 				}),
+				timestamp: -1,
 			}
 			index.logCtx.Info("found index")
 			return nil
@@ -108,6 +109,7 @@ func getSources(dir string) (*source, []*source, string) {
 					"source": path,
 					"slug":   matches[1],
 				}),
+				timestamp: -1,
 			}
 			entry.logCtx.Info("found post")
 			entry.setTimestamp()

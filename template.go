@@ -73,7 +73,9 @@ const (
   <link href="{{ BASE_DOMAIN }}{{ BASE_URL }}/atom{% ifdef FILTER_TAG %}/{{ FILTER_TAG }}{% endif %}/index.xml" rel="self" />
   <author>
     <name>{{ AUTHOR_NAME }}</name>
+    {%- ifdef AUTHOR_EMAIL %}
     <email>{{ AUTHOR_EMAIL }}</email>
+    {%- endif %}
   </author>
   {%- ifdef SITE_SUBTITLE %}
   <subtitle type="text">{{ SITE_SUBTITLE }}</subtitle>
@@ -87,7 +89,9 @@ const (
     <link href="{{ BASE_DOMAIN }}{{ BASE_URL }}/{{ POSTS_PREFIX }}{% ifndef POSTS_PREFIX %}post{% endif %}/{{ FILENAME }}/index.html" />
     <author>
       <name>{{ AUTHOR_NAME }}</name>
+      {%- ifdef AUTHOR_EMAIL %}
       <email>{{ AUTHOR_EMAIL }}</email>
+      {%- endif %}
     </author>
     <content type="html"><![CDATA[{{ CONTENT }}]]></content>
   </entry>

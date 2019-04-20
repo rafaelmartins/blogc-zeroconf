@@ -18,6 +18,7 @@ type context struct {
 	baseDomain  string
 	authorName  string
 	authorEmail string
+	withDate    bool
 
 	// read from directory
 	index    *source
@@ -43,9 +44,11 @@ func newCtx() (*context, error) {
 	ctx := context{
 		title:       "Untitled",
 		postsPrefix: "post",
+		authorName:  "Unknown Author",
 		index:       index,
 		posts:       posts,
 		template:    template,
+		withDate:    true,
 	}
 
 	if ctx.index == nil {
@@ -109,6 +112,13 @@ func newCtx() (*context, error) {
 		}
 		if found {
 			ctx.authorEmail = authorEmail
+		}
+	}
+
+	for _, v := range ctx.posts {
+		if v.timestamp == -1 {
+			ctx.withDate = false
+			break
 		}
 	}
 

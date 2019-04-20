@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/blogc/go-blogc"
 	"github.com/sirupsen/logrus"
@@ -93,7 +94,7 @@ func main() {
 		atomDst := blogc.FilePath(filepath.Join(out, "atom.xml"))
 		atomLogCtx := logrus.WithField("atom", atomDst.Path())
 
-		if ctx.baseDomain != "" && ctx.authorName != "" && ctx.authorEmail != "" {
+		if ctx.baseDomain != "" && ctx.withDate {
 			atomTmpl, err := ctx.getAtomTemplate()
 			if err != nil {
 				atomLogCtx.Fatal(err)
@@ -111,7 +112,15 @@ func main() {
 				logCtx: atomLogCtx,
 			})
 		} else {
-			atomLogCtx.Warning("atom feed disabled. to generate, add BASE_DOMAIN, AUTHOR_NAME and AUTHOR_EMAIL to index file")
+			errs := []string{}
+			if ctx.baseDomain == "" {
+				errs = append(errs, "index source BASE_DOMAIN variable (e.g. 'http://foo.com')")
+			}
+			if !ctx.withDate {
+				errs = append(errs, "posts timestamp (DATE variable, e.g '2019-01-01 12:00:00')")
+			}
+
+			atomLogCtx.WithField("missing", strings.Join(errs, ", ")).Warning("disabled atom feed")
 		}
 
 	} else if ctx.index != nil {
