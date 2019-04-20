@@ -3,14 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/blogc/go-blogc"
 	"github.com/sirupsen/logrus"
 )
-
-type buildCtx struct {
-	blogcCtx *blogc.BuildContext
-	logCtx   *logrus.Entry
-}
 
 func main() {
 	out, found := os.LookupEnv("OUTPUT_DIR")
