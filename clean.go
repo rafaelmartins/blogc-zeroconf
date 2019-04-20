@@ -9,7 +9,7 @@ import (
 )
 
 func clean(ctx *context, out string) error {
-	bctxs, err := ctx.getBuildCtxs(out, false)
+	bctxs, err := ctx.getBuildContexts(out, false)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,7 @@
 package main
 
 func build(ctx *context, out string) error {
-	bctxs, err := ctx.getBuildCtxs(out, true)
+	bctxs, err := ctx.getBuildContexts(out, true)
 	if err != nil {
 		return err
 	}

@@ -40,7 +40,7 @@ type context struct {
 	atomTemplateFile blogc.File
 }
 
-func newCtx() (*context, error) {
+func newContext() (*context, error) {
 	dir, found := os.LookupEnv("SOURCE_DIR")
 	if !found {
 		dir = "."
@@ -158,7 +158,7 @@ func newCtx() (*context, error) {
 	return &ctx, nil
 }
 
-func (c *context) globalVariables() []string {
+func (c *context) getGlobalVariables() []string {
 	rv := []string{}
 
 	if c.title != "" {
@@ -192,7 +192,7 @@ func (c *context) globalVariables() []string {
 	return rv
 }
 
-func (c *context) getBuildCtxs(out string, withTemplates bool) ([]*buildContext, error) {
+func (c *context) getBuildContexts(out string, withTemplates bool) ([]*buildContext, error) {
 	rv := []*buildContext{}
 
 	withAtom := len(c.posts) > 0 && c.baseDomain != "" && c.withDate
@@ -215,7 +215,7 @@ func (c *context) getBuildCtxs(out string, withTemplates bool) ([]*buildContext,
 		}
 	}
 
-	vars := c.globalVariables()
+	vars := c.getGlobalVariables()
 
 	appendEntryCtx := func(src *source, dst blogc.File) {
 		rv = append(rv, &buildContext{

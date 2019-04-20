@@ -23,7 +23,7 @@ func main() {
 	}
 	logrus.SetLevel(lvl)
 
-	ctx, err := newCtx()
+	ctx, err := newContext()
 	if err != nil {
 		logrus.Fatal(err)
 	}
