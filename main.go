@@ -1,10 +1,7 @@
 package main
 
 import (
-	"io"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/blogc/go-blogc"
 	"github.com/sirupsen/logrus"
@@ -36,146 +33,23 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
+	defer ctx.close()
 
-	tmpl, err := ctx.getTemplate()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	defer tmpl.Close()
-
-	bctxs := []*buildCtx{}
-	vars := ctx.globalVariables()
-
-	appendEntryCtx := func(src *source, dst blogc.File) {
-		bctxs = append(bctxs, &buildCtx{
-			blogcCtx: &blogc.BuildContext{
-				Listing:         false,
-				InputFiles:      []blogc.File{src.path},
-				TemplateFile:    tmpl,
-				OutputFile:      dst,
-				GlobalVariables: vars,
-			},
-			logCtx: src.logCtx.WithField("entry", dst.Path()),
-		})
-	}
-
-	for _, p := range ctx.posts {
-		appendEntryCtx(
-			p,
-			blogc.FilePath(filepath.Join(out, ctx.postsPrefix, p.slug, "index.html")),
-		)
-	}
-
-	dst := blogc.FilePath(filepath.Join(out, "index.html"))
-
-	if len(ctx.posts) > 0 {
-		listing := &blogc.BuildContext{
-			Listing:         true,
-			InputFiles:      ctx.postsFiles,
-			TemplateFile:    tmpl,
-			OutputFile:      dst,
-			GlobalVariables: vars,
-		}
-
-		logCtx := logrus.WithField("index", dst.Path())
-
-		if ctx.index != nil {
-			listing.ListingEntryFile = ctx.index.path
-			logCtx = logCtx.WithField("source", ctx.index.path.Path())
-		}
-
-		bctxs = append(bctxs, &buildCtx{
-			blogcCtx: listing,
-			logCtx:   logCtx,
-		})
-
-		atomDst := blogc.FilePath(filepath.Join(out, "atom.xml"))
-		atomLogCtx := logrus.WithField("atom", atomDst.Path())
-
-		if ctx.baseDomain != "" && ctx.withDate {
-			atomTmpl, err := ctx.getAtomTemplate()
-			if err != nil {
-				atomLogCtx.Fatal(err)
-			}
-			defer atomTmpl.Close()
-
-			bctxs = append(bctxs, &buildCtx{
-				blogcCtx: &blogc.BuildContext{
-					Listing:         true,
-					InputFiles:      ctx.postsAtomFiles,
-					TemplateFile:    atomTmpl,
-					OutputFile:      atomDst,
-					GlobalVariables: append(vars, "DATE_FORMAT=%Y-%m-%dT%H:%M:%SZ"),
-				},
-				logCtx: atomLogCtx,
-			})
-		} else {
-			errs := []string{}
-			if ctx.baseDomain == "" {
-				errs = append(errs, "index source BASE_DOMAIN variable (e.g. 'http://foo.com')")
-			}
-			if !ctx.withDate {
-				errs = append(errs, "posts timestamp (DATE variable, e.g '2019-01-01 12:00:00')")
-			}
-
-			atomLogCtx.WithField("missing", strings.Join(errs, ", ")).Warning("disabled atom feed")
-		}
-
-	} else if ctx.index != nil {
-		appendEntryCtx(ctx.index, dst)
-	}
-
-	if len(os.Args) > 1 && os.Args[1] == "clean" {
-		for _, c := range bctxs {
-			c.logCtx.Info("removing")
-			if err := os.Remove(c.blogcCtx.OutputFile.Path()); err != nil {
-				c.logCtx.Fatal(err)
-			}
-		}
-
-		dirs := []string{}
-		filepath.Walk(out, func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() {
-				return nil
-			}
-
-			if err != nil {
-				logrus.WithField("path", path).Error(err)
-				return nil
-			}
-
-			// prepend to slice, because we want subdirectories first
-			dirs = append([]string{path}, dirs...)
-			return nil
-		})
-
-		for _, dir := range dirs {
-			logCtx := logrus.WithField("path", dir)
-
-			f, err := os.Open(dir)
-			if err != nil {
-				logCtx.Fatal(err)
-			}
-			defer f.Close()
-
-			if _, err = f.Readdirnames(1); err != io.EOF {
-				logCtx.Warning("directory not empty")
-				continue
-			}
-
-			logCtx.Info("removing")
-			if err := os.Remove(dir); err != nil {
-				logCtx.Fatal(err)
-			}
-		}
-
+	if len(os.Args) <= 1 {
+		build(ctx, out)
 		return
 	}
 
-	for _, c := range bctxs {
-		c.logCtx.Info("building")
-		if err := c.blogcCtx.Build(); err != nil {
-			c.logCtx.Fatal(err)
-		}
+	switch os.Args[1] {
+	case "build":
+		err = build(ctx, out)
+	case "clean":
+		err = clean(ctx, out)
+	default:
+		logrus.Fatalf("command not found: %s", os.Args[1])
+	}
+
+	if err != nil {
+		logrus.Fatal(err)
 	}
 }

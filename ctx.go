@@ -3,10 +3,18 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/blogc/go-blogc"
+	"github.com/sirupsen/logrus"
 )
+
+type buildContext struct {
+	blogcCtx *blogc.BuildContext
+	logCtx   *logrus.Entry
+}
 
 type context struct {
 
@@ -25,7 +33,11 @@ type context struct {
 	posts          []*source
 	postsFiles     []blogc.File
 	postsAtomFiles []blogc.File
-	template       string
+	mainTemplate   string
+
+	// not filled by newCtx
+	mainTemplateFile blogc.File
+	atomTemplateFile blogc.File
 }
 
 func newCtx() (*context, error) {
@@ -41,17 +53,14 @@ func newCtx() (*context, error) {
 		}
 	}
 
-	index, posts, template := getSources(dir)
-
 	ctx := context{
 		title:       "Untitled",
 		postsPrefix: "post",
 		authorName:  "Unknown Author",
-		index:       index,
-		posts:       posts,
-		template:    template,
 		withDate:    true,
 	}
+
+	ctx.index, ctx.posts, ctx.mainTemplate = getSources(dir)
 
 	if ctx.index == nil {
 		if len(ctx.posts) == 0 {
@@ -183,14 +192,113 @@ func (c *context) globalVariables() []string {
 	return rv
 }
 
-func (c *context) getTemplate() (blogc.File, error) {
-	if c.template != "" {
-		return blogc.FilePath(c.template), nil
+func (c *context) getBuildCtxs(out string, withTemplates bool) ([]*buildContext, error) {
+	rv := []*buildContext{}
+
+	withAtom := len(c.posts) > 0 && c.baseDomain != "" && c.withDate
+
+	if withTemplates {
+		var err error
+
+		if c.mainTemplate != "" {
+			c.mainTemplateFile = blogc.FilePath(c.mainTemplate)
+		}
+
+		if c.mainTemplateFile, err = blogc.NewFileBytes([]byte(mainTemplate)); err != nil {
+			return nil, err
+		}
+
+		if withAtom {
+			if c.atomTemplateFile, err = blogc.NewFileBytes([]byte(atomTemplate)); err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	return blogc.NewFileBytes([]byte(mainTemplate))
+	vars := c.globalVariables()
+
+	appendEntryCtx := func(src *source, dst blogc.File) {
+		rv = append(rv, &buildContext{
+			blogcCtx: &blogc.BuildContext{
+				Listing:         false,
+				InputFiles:      []blogc.File{src.path},
+				TemplateFile:    c.mainTemplateFile,
+				OutputFile:      dst,
+				GlobalVariables: vars,
+			},
+			logCtx: src.logCtx.WithField("entry", dst.Path()),
+		})
+	}
+
+	for _, p := range c.posts {
+		appendEntryCtx(
+			p,
+			blogc.FilePath(filepath.Join(out, c.postsPrefix, p.slug, "index.html")),
+		)
+	}
+
+	dst := blogc.FilePath(filepath.Join(out, "index.html"))
+
+	if len(c.posts) > 0 {
+		listing := &blogc.BuildContext{
+			Listing:         true,
+			InputFiles:      c.postsFiles,
+			TemplateFile:    c.mainTemplateFile,
+			OutputFile:      dst,
+			GlobalVariables: vars,
+		}
+
+		logCtx := logrus.WithField("index", dst.Path())
+
+		if c.index != nil {
+			listing.ListingEntryFile = c.index.path
+			logCtx = logCtx.WithField("source", c.index.path.Path())
+		}
+
+		rv = append(rv, &buildContext{
+			blogcCtx: listing,
+			logCtx:   logCtx,
+		})
+
+		atomDst := blogc.FilePath(filepath.Join(out, "atom.xml"))
+		atomLogCtx := logrus.WithField("atom", atomDst.Path())
+
+		if withAtom {
+			rv = append(rv, &buildContext{
+				blogcCtx: &blogc.BuildContext{
+					Listing:         true,
+					InputFiles:      c.postsAtomFiles,
+					TemplateFile:    c.atomTemplateFile,
+					OutputFile:      atomDst,
+					GlobalVariables: append(vars, "DATE_FORMAT=%Y-%m-%dT%H:%M:%SZ"),
+				},
+				logCtx: atomLogCtx,
+			})
+		} else {
+			errs := []string{}
+			if c.baseDomain == "" {
+				errs = append(errs, "index source BASE_DOMAIN variable (e.g. 'http://foo.com')")
+			}
+			if !c.withDate {
+				errs = append(errs, "posts timestamp (DATE variable, e.g '2019-01-01 12:00:00')")
+			}
+
+			atomLogCtx.WithField("missing", strings.Join(errs, ", ")).Warning("atom support disabled")
+		}
+
+	} else if c.index != nil {
+		appendEntryCtx(c.index, dst)
+	}
+
+	return rv, nil
 }
 
-func (c *context) getAtomTemplate() (blogc.File, error) {
-	return blogc.NewFileBytes([]byte(atomTemplate))
+func (c *context) close() {
+	if c.mainTemplateFile != nil {
+		c.mainTemplateFile.Close()
+	}
+
+	if c.atomTemplateFile != nil {
+		c.atomTemplateFile.Close()
+	}
 }
