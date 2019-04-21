@@ -14,15 +14,25 @@ func clean(ctx *context, out string) error {
 		return err
 	}
 
+	toRemove := []string{}
 	for _, c := range bctxs {
-		if err := os.Remove(c.blogcCtx.OutputFile.Path()); err != nil {
+		toRemove = append(toRemove, c.blogcCtx.OutputFile.Path())
+	}
+
+	for k, _ := range ctx.copy {
+		toRemove = append(toRemove, filepath.Join(out, k))
+	}
+
+	for _, c := range toRemove {
+		logCtx := logrus.WithField("path", c)
+		if err := os.Remove(c); err != nil {
 			if os.IsNotExist(err) {
-				c.logCtx.Warning("not found, skipping")
+				logCtx.Warning("not found, skipping")
 				continue
 			}
 			return err
 		}
-		c.logCtx.Info("removed")
+		logCtx.Info("removed")
 	}
 
 	dirs := []string{}
