@@ -27,6 +27,7 @@ type context struct {
 	authorName  string
 	authorEmail string
 	withDate    bool
+	hideFooter  bool
 
 	// read from directory
 	index          *source
@@ -59,6 +60,7 @@ func newContext() (*context, error) {
 		postsPrefix: "post",
 		authorName:  "Unknown Author",
 		withDate:    true,
+		hideFooter:  false,
 	}
 
 	ctx.index, ctx.posts, ctx.copy, ctx.mainTemplate = getSources(dir)
@@ -125,6 +127,15 @@ func newContext() (*context, error) {
 		if found {
 			ctx.authorEmail = authorEmail
 		}
+
+		_, found, err = ctx.index.getVariable("HIDE_FOOTER")
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			// FIXME: check value?
+			ctx.hideFooter = true
+		}
 	}
 
 	for _, v := range ctx.posts {
@@ -188,6 +199,10 @@ func (c *context) getGlobalVariables() []string {
 
 	if c.authorEmail != "" {
 		rv = append(rv, fmt.Sprintf("AUTHOR_EMAIL=%s", c.authorEmail))
+	}
+
+	if c.hideFooter {
+		rv = append(rv, "HIDE_FOOTER=1")
 	}
 
 	return rv

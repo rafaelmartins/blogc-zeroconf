@@ -33,6 +33,13 @@ const (
                 padding: 15px;
             }
         }
+        .markdown-body footer {
+            font-size: 12px
+        }
+        .markdown-body footer hr {
+            height: 0.08em;
+            margin: 24px 0 10px;
+        }
     </style>
   </head>
   <body>
@@ -60,6 +67,22 @@ const (
       {%- block listing_once %}
       </ul>
       {%- endblock %}
+      {%- ifndef HIDE_FOOTER %}
+      <footer>
+        <hr />
+        <p>
+          Powered by: <a href="https://blogc.rgm.io/">blogc {{ BLOGC_VERSION }}</a> |
+          Built {% ifdef BLOGC_SYSINFO_USERNAME %}by {{ BLOGC_SYSINFO_USERNAME }}{% endif %}
+          {%- ifdef BLOGC_SYSINFO_HOSTNAME %}{% ifdef BLOGC_SYSINFO_USERNAME %}@
+          {%- else %}at {% endif %}{{ BLOGC_SYSINFO_HOSTNAME }}
+          {%- ifdef BLOGC_SYSINFO_INSIDE_DOCKER %} (docker){% endif %} {% endif %}
+          {%- ifdef BLOGC_RUSAGE_CPU_TIME %}in {{ BLOGC_RUSAGE_CPU_TIME }}
+          {%- ifdef BLOGC_SYSINFO_DATETIME %} ({{ BLOGC_SYSINFO_DATETIME }} GMT){% endif %}
+          {%- ifdef BLOGC_RUSAGE_MEMORY %}, {% endif %}{% endif %}
+          {%- ifdef BLOGC_RUSAGE_MEMORY %}using {{ BLOGC_RUSAGE_MEMORY }}{% endif %}.
+        </p>
+      </footer>
+      {%- endif %}
     </div>
   </body>
 </html>`
