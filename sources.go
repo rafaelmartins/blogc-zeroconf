@@ -53,10 +53,11 @@ func (s *source) setTimestamp() {
 	s.timestamp = t
 }
 
-func getSources(dir string) (*source, []*source, string) {
+func getSources(dir string) (*source, []*source, map[string]string, string) {
 	logrus.WithField("path", dir).Info("discovering sources")
 
 	posts := []*source{}
+	copy := map[string]string{}
 	template := ""
 	root := false
 
@@ -117,9 +118,15 @@ func getSources(dir string) (*source, []*source, string) {
 			return nil
 		}
 
+		if basePath[0:1] != "." && basePath[0:1] != "_" {
+			copy[basePath] = path
+			logrus.WithField("source", path).Info("found copy")
+			return nil
+		}
+
 		logCtx.Info("skipping file")
 		return nil
 	})
 
-	return index, posts, template
+	return index, posts, copy, template
 }

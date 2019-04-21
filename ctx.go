@@ -34,6 +34,7 @@ type context struct {
 	postsFiles     []blogc.File
 	postsAtomFiles []blogc.File
 	mainTemplate   string
+	copy           map[string]string
 
 	// not filled by newCtx
 	mainTemplateFile blogc.File
@@ -60,7 +61,7 @@ func newContext() (*context, error) {
 		withDate:    true,
 	}
 
-	ctx.index, ctx.posts, ctx.mainTemplate = getSources(dir)
+	ctx.index, ctx.posts, ctx.copy, ctx.mainTemplate = getSources(dir)
 
 	if ctx.index == nil {
 		if len(ctx.posts) == 0 {
