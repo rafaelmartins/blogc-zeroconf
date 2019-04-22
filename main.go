@@ -39,6 +39,8 @@ func main() {
 		err = build(ctx, out)
 	case "clean":
 		err = clean(ctx, out)
+	case "runserver":
+		err = runserver(ctx, out)
 	default:
 		logrus.Fatalf("command not found: %s", os.Args[1])
 	}
