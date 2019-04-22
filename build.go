@@ -26,24 +26,46 @@ func build(ctx *context, out string) error {
 	}
 
 	for basePath, source := range ctx.copy {
+		dst := filepath.Join(out, basePath)
+		logCtx := logrus.WithFields(logrus.Fields{
+			"from": source,
+			"copy": dst,
+		})
+
+		needsCopy := func() bool {
+			st, err := os.Stat(source)
+			if err != nil {
+				return false // source not found?
+			}
+			smtime := st.ModTime()
+
+			st, err = os.Stat(dst)
+			if err != nil {
+				return true
+			}
+			dmtime := st.ModTime()
+
+			return dmtime.Before(smtime)
+		}()
+
+		if !needsCopy {
+			logCtx.Trace("up to date")
+			continue
+		}
+
 		from, err := os.Open(source)
 		if err != nil {
 			return err
 		}
 		defer from.Close()
 
-		dst := filepath.Join(out, basePath)
-		to, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE, 0666)
+		to, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			return err
 		}
 		defer to.Close()
 
-		logrus.WithFields(logrus.Fields{
-			"from": source,
-			"to":   dst,
-		}).Info("copying")
-
+		logCtx.Info("copying")
 		_, err = io.Copy(to, from)
 		if err != nil {
 			return err
