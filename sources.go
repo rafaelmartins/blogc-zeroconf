@@ -54,7 +54,7 @@ func (s *source) setTimestamp() {
 }
 
 func getSources(dir string) (*source, []*source, map[string]string, string) {
-	logrus.WithField("path", dir).Info("discovering sources")
+	logrus.WithField("path", dir).Trace("discovering sources")
 
 	posts := []*source{}
 	copy := map[string]string{}
@@ -73,7 +73,7 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 
 		if info.IsDir() {
 			if root {
-				logCtx.Info("skipping directory")
+				logCtx.Trace("skipping directory")
 				return filepath.SkipDir // we only want to walk the root directory
 			}
 			root = true
@@ -83,7 +83,7 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 		basePath := filepath.Base(path)
 
 		if basePath == "main.tmpl" {
-			logCtx.Info("found template")
+			logCtx.Trace("found template")
 			template = path
 			return nil
 		}
@@ -98,7 +98,7 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 				}),
 				timestamp: -1,
 			}
-			index.logCtx.Info("found index")
+			index.logCtx.Trace("found index")
 			return nil
 		}
 
@@ -112,7 +112,7 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 				}),
 				timestamp: -1,
 			}
-			entry.logCtx.Info("found post")
+			entry.logCtx.Trace("found post")
 			entry.setTimestamp()
 			posts = append(posts, entry)
 			return nil
@@ -120,11 +120,11 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 
 		if basePath[0:1] != "." && basePath[0:1] != "_" {
 			copy[basePath] = path
-			logrus.WithField("source", path).Info("found copy")
+			logrus.WithField("source", path).Trace("found copy")
 			return nil
 		}
 
-		logCtx.Info("skipping file")
+		logCtx.Trace("skipping file")
 		return nil
 	})
 

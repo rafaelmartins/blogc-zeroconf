@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/blogc/go-blogc"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,12 +30,20 @@ func main() {
 	}
 	defer ctx.close()
 
-	if len(os.Args) <= 1 {
-		build(ctx, out)
-		return
+	command := "build"
+
+	if len(os.Args) > 1 {
+		command = os.Args[1]
 	}
 
-	switch os.Args[1] {
+	logCtx := logrus.WithFields(logrus.Fields{
+		"blogc_version": blogc.Version,
+		"command":       command,
+	})
+
+	logCtx.Info("blogc-zeroconf")
+
+	switch command {
 	case "build":
 		err = build(ctx, out)
 	case "clean":
@@ -42,10 +51,10 @@ func main() {
 	case "runserver":
 		err = runserver(ctx, out)
 	default:
-		logrus.Fatalf("command not found: %s", os.Args[1])
+		logCtx.Fatal("command not found")
 	}
 
 	if err != nil {
-		logrus.Fatal(err)
+		logCtx.Fatal(err)
 	}
 }
