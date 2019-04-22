@@ -15,6 +15,10 @@ func build(ctx *context, out string) error {
 	}
 
 	for _, c := range bctxs {
+		if !c.blogcCtx.NeedsBuild() {
+			c.logCtx.Info("up to date")
+			continue
+		}
 		c.logCtx.Info("building")
 		if err := c.blogcCtx.Build(); err != nil {
 			return err

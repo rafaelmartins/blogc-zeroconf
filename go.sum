@@ -1,5 +1,5 @@
-github.com/blogc/go-blogc v0.0.0-20190415190400-3446ac6d38f0 h1:KlrdzhuZ7y+D58zfEpyZUYr1SiAZzjvhbNM338J3Wr8=
-github.com/blogc/go-blogc v0.0.0-20190415190400-3446ac6d38f0/go.mod h1:Kkg3LJghUH2A7329IDOhXzdSZP89ThA5tDDOo49QP2I=
+github.com/blogc/go-blogc v0.0.0-20190422144517-b90c2773dd4b h1:jD8kWPISmdkS1yyKIo8e3U3o0bwNpJoNJ1t1gCzENKo=
+github.com/blogc/go-blogc v0.0.0-20190422144517-b90c2773dd4b/go.mod h1:Kkg3LJghUH2A7329IDOhXzdSZP89ThA5tDDOo49QP2I=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/hashicorp/go-version v1.1.0 h1:bPIoEKD27tNdebFGGxxYwcL4nepeY4j1QP23PFRGzg0=
