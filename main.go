@@ -24,14 +24,7 @@ func main() {
 	}
 	logrus.SetLevel(lvl)
 
-	ctx, err := newContext()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	defer ctx.close()
-
 	command := "build"
-
 	if len(os.Args) > 1 {
 		command = os.Args[1]
 	}
@@ -42,6 +35,12 @@ func main() {
 	})
 
 	logCtx.Info("blogc-zeroconf")
+
+	ctx, err := newContext()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer ctx.close()
 
 	switch command {
 	case "build":
