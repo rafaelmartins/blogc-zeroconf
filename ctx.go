@@ -14,6 +14,33 @@ type buildContext struct {
 	logCtx   *logrus.Entry
 }
 
+func (c *buildContext) needsBuild(ctx *context) bool {
+	if c.blogcCtx.NeedsBuild() {
+		return true
+	}
+
+	if !c.blogcCtx.Listing {
+		return false
+	}
+
+	st, err := os.Stat(ctx.sourceDir)
+	if err != nil {
+		return false
+	}
+	mtimeSourceDir := st.ModTime()
+
+	if c.blogcCtx.OutputFile == nil {
+		return true
+	}
+
+	st, err = os.Stat(c.blogcCtx.OutputFile.Path())
+	if err != nil {
+		return true
+	}
+
+	return st.ModTime().Before(mtimeSourceDir)
+}
+
 type context struct {
 
 	// guessed from index
@@ -27,6 +54,7 @@ type context struct {
 	hideFooter  bool
 
 	// read from directory
+	sourceDir    string
 	index        *source
 	posts        []*source
 	postsFiles   []blogc.File
@@ -56,6 +84,7 @@ func newContext() (*context, error) {
 		postsPrefix: "post",
 		authorName:  "Unknown Author",
 		hideFooter:  false,
+		sourceDir:   dir,
 	}
 
 	ctx.index, ctx.posts, ctx.copy, ctx.mainTemplate = getSources(dir)

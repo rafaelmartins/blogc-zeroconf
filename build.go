@@ -15,7 +15,7 @@ func build(ctx *context, out string) error {
 	}
 
 	for _, c := range bctxs {
-		if !c.blogcCtx.NeedsBuild() {
+		if !c.needsBuild(ctx) {
 			c.logCtx.Trace("up to date")
 			continue
 		}
