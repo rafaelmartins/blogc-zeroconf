@@ -8,6 +8,10 @@ import (
 )
 
 func main() {
+	if err := blogc.RequiredVersion("0.17.0"); err != nil {
+		logrus.Fatal(err)
+	}
+
 	out, found := os.LookupEnv("OUTPUT_DIR")
 	if !found {
 		out = "_build"

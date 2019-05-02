@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/blogc/go-blogc"
 	"github.com/sirupsen/logrus"
@@ -26,16 +24,14 @@ type context struct {
 	baseDomain  string
 	authorName  string
 	authorEmail string
-	withDate    bool
 	hideFooter  bool
 
 	// read from directory
-	index          *source
-	posts          []*source
-	postsFiles     []blogc.File
-	postsAtomFiles []blogc.File
-	mainTemplate   string
-	copy           map[string]string
+	index        *source
+	posts        []*source
+	postsFiles   []blogc.File
+	mainTemplate string
+	copy         map[string]string
 
 	// not filled by newCtx
 	mainTemplateFile blogc.File
@@ -59,7 +55,6 @@ func newContext() (*context, error) {
 		title:       "Untitled",
 		postsPrefix: "post",
 		authorName:  "Unknown Author",
-		withDate:    true,
 		hideFooter:  false,
 	}
 
@@ -139,33 +134,8 @@ func newContext() (*context, error) {
 	}
 
 	for _, v := range ctx.posts {
-		if v.timestamp == -1 {
-			ctx.withDate = false
-		}
-
 		ctx.postsFiles = append(ctx.postsFiles, &v.path)
-		ctx.postsAtomFiles = append(ctx.postsAtomFiles, &v.path)
 	}
-
-	sort.Slice(ctx.postsFiles, func(i int, j int) bool {
-		rv := func(i int, j int) bool {
-			// we assume that posts and postsFiles have the same size and order
-			if ctx.posts[i].timestamp != ctx.posts[j].timestamp {
-				return ctx.posts[i].timestamp > ctx.posts[j].timestamp
-			}
-			return ctx.posts[i].slug > ctx.posts[j].slug
-		}(i, j)
-
-		if ctx.index != nil {
-			// FIXME: check value?
-			_, asc, err := ctx.index.getVariable("POSTS_ASC")
-			if err == nil && asc {
-				return !rv
-			}
-		}
-
-		return rv
-	})
 
 	return &ctx, nil
 }
@@ -211,7 +181,7 @@ func (c *context) getGlobalVariables() []string {
 func (c *context) getBuildContexts(out string, withTemplates bool) ([]*buildContext, error) {
 	rv := []*buildContext{}
 
-	withAtom := len(c.posts) > 0 && c.baseDomain != "" && c.withDate
+	withAtom := len(c.posts) > 0 && c.baseDomain != ""
 
 	if withTemplates {
 		var err error
@@ -256,12 +226,23 @@ func (c *context) getBuildContexts(out string, withTemplates bool) ([]*buildCont
 	dst := blogc.FilePath(filepath.Join(out, "index.html"))
 
 	if len(c.posts) > 0 {
+		postVars := []string{
+			"FILTER_SORT=1",
+		}
+		_, asc, err := c.index.getVariable("POSTS_ASC")
+		if err == nil && asc {
+			postVars = append(
+				postVars,
+				"FILTER_REVERSE=1",
+			)
+		}
+
 		listing := &blogc.BuildContext{
 			Listing:         true,
 			InputFiles:      c.postsFiles,
 			TemplateFile:    c.mainTemplateFile,
 			OutputFile:      dst,
-			GlobalVariables: vars,
+			GlobalVariables: append(vars, postVars...),
 		}
 
 		logCtx := logrus.WithField("index", dst.Path())
@@ -282,24 +263,23 @@ func (c *context) getBuildContexts(out string, withTemplates bool) ([]*buildCont
 		if withAtom {
 			rv = append(rv, &buildContext{
 				blogcCtx: &blogc.BuildContext{
-					Listing:         true,
-					InputFiles:      c.postsAtomFiles,
-					TemplateFile:    c.atomTemplateFile,
-					OutputFile:      atomDst,
-					GlobalVariables: append(vars, "DATE_FORMAT=%Y-%m-%dT%H:%M:%SZ"),
+					Listing:      true,
+					InputFiles:   c.postsFiles,
+					TemplateFile: c.atomTemplateFile,
+					OutputFile:   atomDst,
+					GlobalVariables: append(
+						vars,
+						"DATE_FORMAT=%Y-%m-%dT%H:%M:%SZ",
+						"FILTER_SORT=1",
+					),
 				},
 				logCtx: atomLogCtx,
 			})
 		} else {
-			errs := []string{}
-			if c.baseDomain == "" {
-				errs = append(errs, "index source BASE_DOMAIN variable (e.g. 'http://foo.com')")
-			}
-			if !c.withDate {
-				errs = append(errs, "posts timestamp (DATE variable, e.g '2019-01-01 12:00:00')")
-			}
-
-			atomLogCtx.WithField("missing", strings.Join(errs, ", ")).Warning("atom support disabled")
+			atomLogCtx.WithField(
+				"missing",
+				"index source BASE_DOMAIN variable (e.g. 'http://foo.com')",
+			).Warning("atom support disabled")
 		}
 
 	} else if c.index != nil {

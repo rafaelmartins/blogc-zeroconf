@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 
 	"github.com/blogc/go-blogc"
 	"github.com/sirupsen/logrus"
@@ -16,10 +15,9 @@ var (
 )
 
 type source struct {
-	path      blogc.FilePath
-	slug      string
-	logCtx    *logrus.Entry
-	timestamp int64
+	path   blogc.FilePath
+	slug   string
+	logCtx *logrus.Entry
 }
 
 func (s *source) getVariable(variable string) (string, bool, error) {
@@ -29,28 +27,6 @@ func (s *source) getVariable(variable string) (string, bool, error) {
 	}
 
 	return entry.GetEvaluatedVariable(variable)
-}
-
-func (s *source) setTimestamp() {
-	ctx := &blogc.BuildContext{
-		Listing:         false,
-		InputFiles:      []blogc.File{s.path},
-		GlobalVariables: []string{"DATE_FORMAT=%s"},
-	}
-
-	v, found, err := ctx.GetEvaluatedVariable("DATE_FORMATTED")
-	if err != nil || !found {
-		s.logCtx.Warning("failed to get post timestamp")
-		return
-	}
-
-	t, err := strconv.ParseInt(v, 10, 64)
-	if err != nil {
-		s.logCtx.Warning("failed to parse post timestamp")
-		return
-	}
-
-	s.timestamp = t
 }
 
 func getSources(dir string) (*source, []*source, map[string]string, string) {
@@ -96,7 +72,6 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 					"source": path,
 					"slug":   matches[1],
 				}),
-				timestamp: -1,
 			}
 			index.logCtx.Trace("found index")
 			return nil
@@ -110,10 +85,8 @@ func getSources(dir string) (*source, []*source, map[string]string, string) {
 					"source": path,
 					"slug":   matches[1],
 				}),
-				timestamp: -1,
 			}
 			entry.logCtx.Trace("found post")
-			entry.setTimestamp()
 			posts = append(posts, entry)
 			return nil
 		}
